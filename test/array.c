@@ -6,6 +6,9 @@
 #include <stdio.h>
 
 
+#define TEST_COUNT 32
+
+
 int*
 run_tests(int *values) {
         int i, count;
@@ -15,7 +18,7 @@ run_tests(int *values) {
 
         /* fill */
         printf("\nFill buffer: ");
-        count = 32;
+        count = TEST_COUNT;
         for(i = 0; i < count; ++i) {
                 pd_array_push(values, i);
                 printf("%d, ", i);
@@ -57,10 +60,49 @@ run_tests(int *values) {
 
 int
 main() {
+        int *values = 0;
+        struct pd_array_details_desc desc;
+
+        /* create with default */
+        printf("\n\ndefault\n");
+        printf("-------");
+        pd_array_create(values);
+        values = run_tests(values);
+        pd_array_destroy(values);
+        assert(values == 0);
 
         /* create with capacity test */
-        int *values = 0;
+        printf("\n\nwith capacity\n"); 
+        printf("-------------");
         pd_array_create_with_capacity(values, 2);
+        values = run_tests(values);
+        pd_array_destroy(values);
+        assert(values == 0);
+
+        /* create with buffer */
+        printf("\n\nwith stack buffer\n");
+        printf("-----------------");
+        int some_big_buffer[TEST_COUNT * 2];
+        desc.buffer = &some_big_buffer[0];
+        desc.buffer_size = sizeof(some_big_buffer);
+        desc.buffer_protected = 1;
+        desc.alloc_fn = malloc;
+        desc.free_fn = free;
+        pd_array_create_with_details(values, &desc);
+        values = run_tests(values);
+        pd_array_destroy(values);
+        assert(values == 0);
+       
+        /* create with buffer */
+        printf("\n\nwith stack buffer and heap allocation\n");
+        printf("-----------------");
+        int some_small_buffer[TEST_COUNT / 2];
+        desc.buffer = &some_small_buffer[0];
+        desc.buffer_size = sizeof(some_small_buffer);
+        desc.buffer_protected = 1;
+        desc.alloc_fn = malloc;
+        desc.free_fn = free;
+        pd_array_create_with_details(values, &desc);
         values = run_tests(values);
         pd_array_destroy(values);
         assert(values == 0);

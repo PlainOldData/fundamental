@@ -2,6 +2,21 @@
 #define ARRAY_INCLUDED
 
 
+/* 
+ * Based off https://github.com/nothings/stb/blob/master/stretchy_buffer.h
+ *
+ * if using c++ you likely don't want this.
+ * if you are still using it in c++ be sure you are only dealing with pod types
+ * I imagine all kinds of subtle things with go wrong.
+ *
+ * however this provides a sorta type safeish stretchy buffer for c
+ *
+ * it does support passing in a stack allocated buffer, you have to scale
+ * the buffer slightly larger because the array has some internal state.
+ *
+ */
+
+
 #ifndef __cplusplus
 #include <stddef.h>
 #else
@@ -25,13 +40,13 @@ typedef void(*pd_array_free_fn)(void*);
 struct pd_array_details_desc {
         void *buffer;                       /* optional */
         int buffer_size;
-        int protect_buffer;
+        int buffer_protected;
         pd_array_alloc_fn alloc_fn;         /* if null this array will not resize/destroy pass malloc if unsure */ 
         pd_array_free_fn free_fn;           /* if null this array will not resize/destroy pass free if unsure */
 };
 
 
-#define pd_array_create_with_details(arr, details) do { _pdi_arr_create_with_buffer((void**)&arr, sizeof(arr[0]), buf, buf_size); } while(0);
+#define pd_array_create_with_details(arr, details) do { _pdi_arr_create_with_details((void**)&arr, sizeof(arr[0]), details); } while(0);
 #define pd_array_create(arr)                       do { _pdi_arr_create((void**)&arr, sizeof(arr[0]), 1); } while(0)
 #define pd_array_create_with_capacity(arr, cap)    do { _pdi_arr_create((void**)&arr, sizeof(arr[0]), cap); } while(0)
 #define pd_array_destroy(arr)                      do { _pdi_arr_destroy((void**)&arr); } while(0)
@@ -103,6 +118,7 @@ void        _pdi_arr_clear(void**ptr);
 struct kc_array_header {
         unsigned char * capacity;
         unsigned char * end;
+        int buffer_protected;
         pd_array_alloc_fn alloc_fn;
         pd_array_free_fn free_fn;
 };
@@ -123,9 +139,22 @@ _pdi_arr_grow(void **ptr, unsigned stride, unsigned capacity)
         header--;
 
         unsigned count = _pdi_arr_size(ptr, stride);
+        unsigned old_bytes = header->end - (unsigned char *)header;
         unsigned bytes = (stride * capacity) + sizeof(struct kc_array_header);
         
-        header = (struct kc_array_header*)realloc(header, bytes);
+        if(header->alloc_fn) {
+                void *buffer = header->alloc_fn(bytes);
+                memcpy(buffer, header, old_bytes);
+
+                if(!header->buffer_protected) {
+                        header->free_fn(header);
+                }
+
+                header = (struct kc_array_header*)buffer;
+                header->buffer_protected = 0;
+        }
+
+//        header = (struct kc_array_header*)realloc(header, bytes);
 
         unsigned char *begin = (unsigned char*)&header[1];
 
@@ -157,10 +186,15 @@ _pdi_arr_create_with_details(
         } else {
                 header = desc->alloc_fn(stride * 32 + sizeof(*header));
         }
+
+        header->buffer_protected = desc->buffer_protected;
+
         unsigned char *begin = (unsigned char*)&header[1];
 
         header[0].end = begin;
         header[0].capacity = (unsigned char*)header + desc->buffer_size;
+        header[0].alloc_fn = desc->alloc_fn;
+        header[0].free_fn = desc->free_fn;
 
         *ptr = (void*)begin;
 }
@@ -188,16 +222,6 @@ _pdi_arr_create(
         details.free_fn = free;
 
         _pdi_arr_create_with_details(ptr, stride, &details);
-
-        /*
-        unsigned array_bytes = stride * capacity;
-        unsigned bytes = sizeof(struct kc_array_header) + array_bytes;
-        struct kc_array_header *header = malloc(bytes);
-        unsigned char *begin = (unsigned char*)&header[1];
-        header[0].end = begin;
-        header[0].capacity = begin + array_bytes;
-        *ptr = (void*)begin;
-        */
 }
 
 
@@ -212,7 +236,10 @@ _pdi_arr_destroy(void **ptr)
         struct kc_array_header *header = ((struct kc_array_header*)*ptr);
         header--;
 
-        free(header);
+        if(!header->buffer_protected) {
+                header->free_fn(header);
+        }
+
         *ptr = 0;
 }
 
@@ -221,7 +248,7 @@ unsigned
 _pdi_arr_size(void **ptr, unsigned stride)
 {
         if (KC_ARR_PEDANTIC_CHECKS) {
-KC_ASSERT(ptr);
+                KC_ASSERT(ptr);
                 KC_ASSERT(*ptr);
                 KC_ASSERT(stride);
         }
