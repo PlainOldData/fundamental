@@ -1,0 +1,60 @@
+{
+        "projects" : [
+                {
+                        "name": "fundamental",
+                        "kind": "StaticLib",
+                        "language": "C",
+                        "location": "./",
+
+                        "files": [
+                                "./premake.json",
+                                "./src/**.c",
+                                "./src/**.h",
+                                "./docs/**.md",
+                                "./include/**.h"
+                        ],
+
+                        "files-windows" : [
+                                "./thirdparty/boost_context/asm/jump_i386_ms_pe_masm.asm",
+                                "./thirdparty/boost_context/asm/make_i386_ms_pe_masm.asm"
+                        ],
+
+                        "files-macosx" : [
+                                "./thirdparty/boost_context/asm/jump_x86_64_sysv_macho_gas.S",
+                                "./thirdparty/boost_context/asm/make_x86_64_sysv_macho_gas.S"
+                        ],
+
+                        "files-linux" : [
+                                "./thirdparty/boost_context/asm/jump_x86_64_sysv_elf_gas.S",
+                                "./thirdparty/boost_context/asm/make_x86_64_sysv_elf_gas.S"
+                        ],
+
+                        "include_dirs" : [
+                                "./src/tyrant/",
+                                "./include/",
+                                "./thirdparty/boost_context/include/"
+                        ],
+
+                        "include_dirs_public" : [
+                                "./include/"
+                        ],
+
+                        "defines": [
+                                "ROA_JOB_DEBUG_NAME_THREADS=1",
+                                "ROA_JOB_CACHELINE_PADDING=0",
+                                "ROA_JOB_CPU_AFFINITY=1",
+                                "ROA_JOB_DEBUG_TH_PROCESS_OUTPUT=0",
+                                "ROA_JOB_STEAL_SIZE=1",
+                                "ROA_JOB_DEBUG_OUTPUT=0"
+                        ],
+
+                        "dependencies" : [
+                                "lib"
+                        ],
+
+                        "disable_warning-msvs" : [
+                                "4127"
+                        ]
+                }
+        ]
+}
