@@ -7,6 +7,13 @@ extern "C" {
 #endif
 
 
+/* ------------------------------------------------------------- Utilities -- */
+
+
+#define ARR_DATA(arr) &arr[0]
+#define ARR_COUNT(arr) (sizeof(arr)/sizeof(arr[0]))
+
+
 /* --------------------------------------------------- [ Array Interface ] -- */
 /*
   C is a little awkward for containers, but this is a good balance for arrays.
