@@ -269,7 +269,7 @@ thread_internal_remove_cleared_batches(
       }
 
       free(batch->counter);
-      batch->counter =  0;
+      batch->counter = 0;
 
       LIB_ASSERT(lib_array_size(tls->batch_ids) == lib_array_size(tls->batches));
       LIB_ASSERT(lib_array_size(tls->batch_ids) > erase_index);

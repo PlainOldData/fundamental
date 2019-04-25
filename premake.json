@@ -15,8 +15,8 @@
                         ],
 
                         "files-windows" : [
-                                "./thirdparty/boost_context/asm/jump_i386_ms_pe_masm.asm",
-                                "./thirdparty/boost_context/asm/make_i386_ms_pe_masm.asm"
+                                "./thirdparty/boost_context/asm/jump_x86_64_ms_pe_masm.asm",
+                                "./thirdparty/boost_context/asm/make_x86_64_ms_pe_masm.asm"
                         ],
 
                         "files-macosx" : [

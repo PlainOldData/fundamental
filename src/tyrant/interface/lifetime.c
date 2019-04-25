@@ -15,9 +15,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#ifndef _WIN32
 #include <execinfo.h>
 #include <dlfcn.h>
-
+#endif
 
 
 /* ------------------------------------------------------------ [ config ] -- */
@@ -218,6 +219,7 @@ tyrant_ctx_destroy(
         }
         
         /* dump logs */
+        #ifndef _WIN32
         FILE *f;
         f = fopen("log.trace", "w");
         fprintf(f, "{\n");
@@ -250,6 +252,7 @@ tyrant_ctx_destroy(
         fprintf(f, "\t]\n");
         fprintf(f, "}\n");
         fclose(f);
+        #endif
 
         /* destroy containers */
         lib_array_destroy(kill_ctx->threads);
